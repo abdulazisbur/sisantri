@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("SANTRI") // ADMIN, MUSYRIF, SANTRI
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  santri  Santri?
+  musyrif Musyrif?
+}
+
+model Santri {
+  id          String   @id @default(cuid())
+  nis         String   @unique
+  name        String
+  gender      String   // L / P
+  room        String
+  class       String
+  parentName  String
+  parentPhone String
+  address     String?
+  entryYear   String
+  status      String   @default("AKTIF") // AKTIF, NONAKTIF, ALUMNI
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+  musyrifId String?
+  musyrif   Musyrif? @relation(fields: [musyrifId], references: [id])
+
+  pelanggaran     Pelanggaran[]
+  perizinanSakit  PerizinanSakit[]
+  perizinanPulang PerizinanPulang[]
+  skia            SKIA[]
+  raport          Raport[]
+}
+
+model Musyrif {
+  id        String   @id @default(cuid())
+  name      String
+  gender    String   // L / P
+  phone     String?
+  division  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  santriList      Santri[]
+  absensi         Absensi[]
+  pelanggaran     Pelanggaran[]
+  perizinanSakit  PerizinanSakit[]
+  perizinanPulang PerizinanPulang[]
+  divisiAnggota   DivisiAnggota[]
+}
+
+model Struktur {
+  id        String   @id @default(cuid())
+  name      String
+  position  String
+  period    String
+  order     Int      @default(0)
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Divisi {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  anggota     DivisiAnggota[]
+}
+
+model DivisiAnggota {
+  id        String  @id @default(cuid())
+  role      String  @default("ANGGOTA") // KETUA, WAKIL, ANGGOTA
+  divisiId  String
+  divisi    Divisi  @relation(fields: [divisiId], references: [id], onDelete: Cascade)
+  musyrifId String
+  musyrif   Musyrif @relation(fields: [musyrifId], references: [id], onDelete: Cascade)
+
+  @@unique([divisiId, musyrifId])
+}
+
+model Absensi {
+  id        String   @id @default(cuid())
+  date      DateTime
+  status    String   // HADIR, IZIN, SAKIT, ALPHA
+  note      String?
+  musyrifId String
+  musyrif   Musyrif  @relation(fields: [musyrifId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PerizinanSakit {
+  id        String   @id @default(cuid())
+  startDate DateTime
+  endDate   DateTime
+  reason    String
+  status    String   @default("PENDING") // PENDING, DISETUJUI, DITOLAK
+  document  String?
+  santriId  String
+  santri    Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  musyrifId String
+  musyrif   Musyrif  @relation(fields: [musyrifId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PerizinanPulang {
+  id            String   @id @default(cuid())
+  departDate    DateTime
+  returnDate    DateTime
+  reason        String
+  status        String   @default("PENDING") // PENDING, DISETUJUI, DITOLAK
+  parentConfirm Boolean  @default(false)
+  santriId      String
+  santri        Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  musyrifId     String
+  musyrif       Musyrif  @relation(fields: [musyrifId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SKIA {
+  id          String   @id @default(cuid())
+  type        String   // IZIN_AKTIF, KETERANGAN_SANTRI, REKOMENDASI
+  issueDate   DateTime @default(now())
+  description String?
+  status      String   @default("DRAFT") // DRAFT, DITERBITKAN
+  santriId    String
+  santri      Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Pelanggaran {
+  id          String   @id @default(cuid())
+  date        DateTime
+  category    String   // IBADAH, AKHLAK, KETERTIBAN, KEBERSIHAN, AKADEMIK
+  level       String   // RINGAN, SEDANG, BERAT, SANGAT_BERAT
+  description String
+  points      Int
+  santriId    String
+  santri      Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  musyrifId   String
+  musyrif     Musyrif  @relation(fields: [musyrifId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Raport {
+  id          String   @id @default(cuid())
+  period      String   // e.g., "2024/2025 - Semester 1"
+  totalPoints Int      @default(100)
+  grade       String   // MUMTAZ, JAYYID_JIDDAN, JAYYID, MAQBUL, RASIB
+  details     String?  // JSON string of violation summary
+  santriId    String
+  santri      Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  generatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
