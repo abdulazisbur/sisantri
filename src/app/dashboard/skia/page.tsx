@@ -63,7 +63,7 @@ export default function SKIAPage() {
   return (
     <div>
       <h1 className="page-title" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <FileText size={24} /> SKIA (Surat Keterangan)
+        <FileText size={24} /> SKIA (Surat Keterangan Ibadah Amaliyah)
       </h1>
 
       <div className="toolbar">

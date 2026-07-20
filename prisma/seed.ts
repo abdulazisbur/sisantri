@@ -4,9 +4,13 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Seeding database...')
+  console.log('🌱 Seeding database Pondok Pesantren Tahfizh Al-Kaukab Bojong Nangka...')
 
   // Clean existing data
+  await prisma.programKerjaWaka.deleteMany()
+  await prisma.pointAkhlak.deleteMany()
+  await prisma.kPI.deleteMany()
+  await prisma.absensiMusyrif.deleteMany()
   await prisma.raport.deleteMany()
   await prisma.pelanggaran.deleteMany()
   await prisma.sKIA.deleteMany()
@@ -22,243 +26,280 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('admin123', 10)
 
-  // Create Admin User
+  // 1. Create Users
   const adminUser = await prisma.user.create({
     data: {
-      email: 'admin@pesantren.com',
-      name: 'Admin Pesantren',
+      email: 'admin@alkaukab.sch.id',
+      name: 'Admin Pesantren Utama',
       password: hashedPassword,
       role: 'ADMIN',
     },
   })
 
-  // Create Musyrif Users
-  const musyrifUser1 = await prisma.user.create({
+  const kepalaBaninUser = await prisma.user.create({
     data: {
-      email: 'musyrif1@pesantren.com',
-      name: 'Ustadz Ahmad',
+      email: 'kepala.banin@alkaukab.sch.id',
+      name: 'Ustadz Asrarun Najib, S.Pd.',
+      password: hashedPassword,
+      role: 'ADMIN',
+    },
+  })
+
+  const kepalaBanatUser = await prisma.user.create({
+    data: {
+      email: 'kepala.banat@alkaukab.sch.id',
+      name: 'Ustadzah Siti Wahyuni, S. Ag., Al Hafidzah',
+      password: hashedPassword,
+      role: 'ADMIN',
+    },
+  })
+
+  const wakaKesantrianBanatUser = await prisma.user.create({
+    data: {
+      email: 'waka.kesantrian@alkaukab.sch.id',
+      name: 'Ustadzah Nidatul Azizah, Al Hafidzah',
+      password: hashedPassword,
+      role: 'ADMIN',
+    },
+  })
+
+  const musyrifDemoUser = await prisma.user.create({
+    data: {
+      email: 'musyrifah.annur2@alkaukab.sch.id',
+      name: 'Ustadzah Afi Basyiroh, S.Pd., Al Hafidzah',
       password: hashedPassword,
       role: 'MUSYRIF',
     },
   })
 
-  const musyrifUser2 = await prisma.user.create({
-    data: {
-      email: 'musyrif2@pesantren.com',
-      name: 'Ustadzah Fatimah',
-      password: hashedPassword,
-      role: 'MUSYRIF',
-    },
-  })
+  // 2. Musyrif Banin (9)
+  const musyrifBaninList = [
+    { name: 'Ustadz M. Rafli Apriliyan, Al Hafidz', room: 'Al Fajr 1', phone: '08121111001' },
+    { name: 'Ustadz Maulana Rohman, Al Hafidz', room: 'Al Fajr 2', phone: '08121111002' },
+    { name: 'Ustadz Sholahudin, S.E.', room: 'Al Misbah 1', phone: '08121111003' },
+    { name: 'Ustadz Haikal Rifai, Lc.', room: 'Al Misbah 2', phone: '08121111004' },
+    { name: 'Ustadz Angga Hermawan, S.Ag., Al Hafidz', room: 'Al Qomar 1 & 2', phone: '08121111005' },
+    { name: 'Ustadz Muhammad Yusuf Al Hafizh', room: 'Asy Syams 1', phone: '08121111006' },
+    { name: 'Ustadz Andika Wildan Gunaeba, S.Pd.', room: 'Asy Syams 2', phone: '08121111007' },
+    { name: 'Ustadz Muhammad Fadeil', room: 'Asy Syams 3', phone: '08121111008' },
+    { name: 'Ustadz Muh. Iqbal, S.H.', room: 'Al A’la 1 & 2', phone: '08121111009' },
+  ]
 
-  // Create Musyrif
-  const musyrif1 = await prisma.musyrif.create({
-    data: {
-      name: 'Ustadz Ahmad Fauzi',
-      gender: 'L',
-      phone: '081234567890',
-      division: 'Tarbiyah',
-      userId: musyrifUser1.id,
-    },
-  })
+  const musyrifBaninRecords = []
+  for (const m of musyrifBaninList) {
+    const rec = await prisma.musyrif.create({
+      data: {
+        name: m.name,
+        gender: 'L',
+        room: m.room,
+        phone: m.phone,
+        division: 'Kemusyrifan Banin',
+      },
+    })
+    musyrifBaninRecords.push(rec)
+  }
 
-  const musyrif2 = await prisma.musyrif.create({
-    data: {
-      name: 'Ustadzah Fatimah Az-Zahra',
-      gender: 'P',
-      phone: '081234567891',
-      division: 'Keamanan',
-      userId: musyrifUser2.id,
-    },
-  })
+  // 3. Musyrifah Banat (8)
+  const musyrifahBanatList = [
+    { name: 'Ustadzah Rif`atuzzulfa, Al Hafidzah', room: 'An Najm 1', phone: '08122222001' },
+    { name: 'Ustadzah Zahrotul Fitriyah, Al Hafidzah', room: 'An Najm 2', phone: '08122222002' },
+    { name: 'Ustadzah Reri Yullian Putri, S.Pd.', room: 'An Najm 3', phone: '08122222003' },
+    { name: 'Ustadzah Afi Basyiroh, S.Pd., Al Hafidzah', room: 'An Nur 2', phone: '08122222004', userId: musyrifDemoUser.id },
+    { name: 'Ustadzah Hamida A\'la Zama', room: 'An Nur 3', phone: '08122222005' },
+    { name: 'Ustadzah Eldis Pravita Syukrila', room: 'An Nur 4', phone: '08122222006' },
+    { name: 'Ustadzah Zahrotul Aini, Al Hafidzah', room: 'An Nur 5', phone: '08122222007' },
+    { name: 'Ustadzah Melani Putri, Al Hafidzah', room: 'An Nur 6', phone: '08122222008' },
+  ]
 
-  // Create Santri
-  const santriNames = [
-    { nis: 'S001', name: 'Muhammad Rafi', gender: 'L', room: 'Kamar 1A', class: 'VII A', parentName: 'Bapak Rafi', parentPhone: '0812345001' },
-    { nis: 'S002', name: 'Abdullah Azzam', gender: 'L', room: 'Kamar 1A', class: 'VII A', parentName: 'Bapak Azzam', parentPhone: '0812345002' },
-    { nis: 'S003', name: 'Umar Faruq', gender: 'L', room: 'Kamar 1B', class: 'VII B', parentName: 'Bapak Faruq', parentPhone: '0812345003' },
-    { nis: 'S004', name: 'Bilal Ibrahim', gender: 'L', room: 'Kamar 1B', class: 'VIII A', parentName: 'Bapak Ibrahim', parentPhone: '0812345004' },
-    { nis: 'S005', name: 'Aisyah Putri', gender: 'P', room: 'Kamar 2A', class: 'VII A', parentName: 'Bapak Aisyah', parentPhone: '0812345005' },
-    { nis: 'S006', name: 'Khadijah Nur', gender: 'P', room: 'Kamar 2A', class: 'VIII A', parentName: 'Bapak Khadijah', parentPhone: '0812345006' },
-    { nis: 'S007', name: 'Zainab Hafsah', gender: 'P', room: 'Kamar 2B', class: 'VII B', parentName: 'Bapak Zainab', parentPhone: '0812345007' },
-    { nis: 'S008', name: 'Salman Al-Farisi', gender: 'L', room: 'Kamar 1A', class: 'VIII B', parentName: 'Bapak Salman', parentPhone: '0812345008' },
+  const musyrifahBanatRecords = []
+  for (const m of musyrifahBanatList) {
+    const rec = await prisma.musyrif.create({
+      data: {
+        name: m.name,
+        gender: 'P',
+        room: m.room,
+        phone: m.phone,
+        division: 'Kemusyrifan Banat',
+        userId: m.userId || undefined,
+      },
+    })
+    musyrifahBanatRecords.push(rec)
+  }
+
+  // 4. Create Santri Data (Banin & Banat)
+  const santriSeedData = [
+    { nis: 'S2026001', name: 'Ahmad Raihan', gender: 'L', room: 'Al Fajr 1', class: '7A Tahfizh', parentName: 'Bpk. Hendra', parentPhone: '0813000001', musyrifId: musyrifBaninRecords[0].id },
+    { nis: 'S2026002', name: 'Faqih Al-Habsyi', gender: 'L', room: 'Al Fajr 2', class: '7B Tahfizh', parentName: 'Bpk. Mahmud', parentPhone: '0813000002', musyrifId: musyrifBaninRecords[1].id },
+    { nis: 'S2026003', name: 'Muhammad Al-Fatih', gender: 'L', room: 'Al Misbah 1', class: '8A Tahfizh', parentName: 'Bpk. Ridwan', parentPhone: '0813000003', musyrifId: musyrifBaninRecords[2].id },
+    { nis: 'S2026004', name: 'Zaidan Zikri', gender: 'L', room: 'Asy Syams 1', class: '9A Tahfizh', parentName: 'Bpk. Fahmi', parentPhone: '0813000004', musyrifId: musyrifBaninRecords[5].id },
+    { nis: 'S2026005', name: 'Aisyah Az-Zahra', gender: 'P', room: 'An Nur 2', class: '7A Banat', parentName: 'Bpk. Bambang', parentPhone: '0813000005', musyrifId: musyrifahBanatRecords[3].id },
+    { nis: 'S2026006', name: 'Fatimah Nur Nabila', gender: 'P', room: 'An Nur 2', class: '7A Banat', parentName: 'Bpk. Syarif', parentPhone: '0813000006', musyrifId: musyrifahBanatRecords[3].id },
+    { nis: 'S2026007', name: 'Salma Khairunnisa', gender: 'P', room: 'An Najm 1', class: '8B Banat', parentName: 'Bpk. Usman', parentPhone: '0813000007', musyrifId: musyrifahBanatRecords[0].id },
+    { nis: 'S2026008', name: 'Naylah Putri Syafiqah', gender: 'P', room: 'An Nur 3', class: '9B Banat', parentName: 'Bpk. Herman', parentPhone: '0813000008', musyrifId: musyrifahBanatRecords[4].id },
   ]
 
   const santriRecords = []
-  for (const data of santriNames) {
-    const santri = await prisma.santri.create({
+  for (const s of santriSeedData) {
+    const rec = await prisma.santri.create({
       data: {
-        ...data,
-        entryYear: '2024',
+        nis: s.nis,
+        name: s.name,
+        gender: s.gender,
+        room: s.room,
+        class: s.class,
+        parentName: s.parentName,
+        parentPhone: s.parentPhone,
+        address: 'Jl. Raya Bojong Nangka, Gunung Putri, Bogor',
+        entryYear: '2026',
         status: 'AKTIF',
-        musyrifId: data.gender === 'L' ? musyrif1.id : musyrif2.id,
+        musyrifId: s.musyrifId,
       },
     })
-    santriRecords.push(santri)
+    santriRecords.push(rec)
   }
 
-  // Create Santri User (for demo)
-  await prisma.user.create({
-    data: {
-      email: 'santri@pesantren.com',
-      name: 'Muhammad Rafi',
-      password: hashedPassword,
-      role: 'SANTRI',
-    },
-  })
-
-  // Create Struktur
-  const strukturData = [
-    { name: 'KH. Abdul Karim', position: 'Pengasuh', period: '2024/2025', order: 0 },
-    { name: 'Ust. Mahmud', position: 'Ketua Pengurus', period: '2024/2025', order: 1 },
-    { name: 'Ust. Hasan', position: 'Sekretaris', period: '2024/2025', order: 1 },
-    { name: 'Ust. Ali', position: 'Bendahara', period: '2024/2025', order: 1 },
-    { name: 'Ust. Ahmad Fauzi', position: 'Ketua Tarbiyah', period: '2024/2025', order: 2 },
-    { name: 'Ustz. Fatimah', position: 'Ketua Keamanan', period: '2024/2025', order: 2 },
-    { name: 'Ust. Yusuf', position: 'Ketua Kebersihan', period: '2024/2025', order: 2 },
+  // 5. Struktur Organisasi TA 2026/2027
+  const strukturItems = [
+    { name: 'Ibu Nyai Hj. Endang Riska Yani, S.Pd.I.', position: 'Mudirah', period: '2026/2027', order: 1 },
+    // Banin
+    { name: 'Ustadz Asrarun Najib, S.Pd.', position: 'Kepala Pesantren Banin', period: '2026/2027', order: 2 },
+    { name: 'Ustadz Angga Hermawan, S.Ag., Al Hafidz', position: 'Waka. Kesantrian Banin (Ketertiban & OSAKA)', period: '2026/2027', order: 3 },
+    { name: 'Ustadz Haikal Rifai, Lc.', position: 'Waka. Kurikulum Banin (Ubudiyyah, Pendidikan, Bahasa)', period: '2026/2027', order: 3 },
+    { name: 'Ustadz Sholahudin, S.E.', position: 'Waka. Kebersihan, Kesehatan, dan Sarpras Banin (K2S)', period: '2026/2027', order: 3 },
+    { name: 'Ustadzah Sarah Julianti', position: 'TU Pesantren Banin & Banat', period: '2026/2027', order: 4 },
+    // Banat
+    { name: 'Ustadzah Siti Wahyuni, S. Ag., Al Hafidzah', position: 'Kepala Pesantren Banat', period: '2026/2027', order: 2 },
+    { name: 'Ustadzah Nidatul Azizah, Al Hafidzah', position: 'Waka. Kesantrian Banat (Ketertiban & OSAKA)', period: '2026/2027', order: 3 },
+    { name: 'Ustadzah Alda Nur Alfi Lail, S.Ag Al Hafizah', position: 'Waka. Kurikulum Banat (Ubudiyyah, Pendidikan, Bahasa)', period: '2026/2027', order: 3 },
+    { name: 'Ustadzah Lutpiana Ulpah', position: 'Waka. Kebersihan, Kesehatan, dan Sarpras Banat (K2S)', period: '2026/2027', order: 3 },
   ]
 
-  for (const data of strukturData) {
-    await prisma.struktur.create({ data })
+  for (const item of strukturItems) {
+    await prisma.struktur.create({ data: item })
   }
 
-  // Create Divisi
-  const divTarbiyah = await prisma.divisi.create({
-    data: { name: 'Tarbiyah', description: 'Divisi pendidikan dan pengajaran' },
-  })
-
-  const divKeamanan = await prisma.divisi.create({
-    data: { name: 'Keamanan', description: 'Divisi keamanan dan ketertiban' },
-  })
-
-  await prisma.divisi.create({
-    data: { name: 'Kebersihan', description: 'Divisi kebersihan dan lingkungan' },
-  })
-
-  // Assign musyrif to divisi
-  await prisma.divisiAnggota.create({
-    data: { divisiId: divTarbiyah.id, musyrifId: musyrif1.id, role: 'KETUA' },
-  })
-
-  await prisma.divisiAnggota.create({
-    data: { divisiId: divKeamanan.id, musyrifId: musyrif2.id, role: 'KETUA' },
-  })
-
-  // Create Absensi
+  // 6. Absensi Musyrif / Musyrifah (Fingerprint Log Sesi 1 & Sesi 2)
+  const allMusyrif = [...musyrifBaninRecords, ...musyrifahBanatRecords]
   const today = new Date()
-  for (let i = 0; i < 10; i++) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    const statuses = ['HADIR', 'HADIR', 'HADIR', 'IZIN', 'HADIR']
 
-    await prisma.absensi.create({
+  for (const m of allMusyrif) {
+    // Session 1 (04.00-07.30)
+    await prisma.absensiMusyrif.create({
       data: {
-        date,
-        status: statuses[i % statuses.length],
-        musyrifId: musyrif1.id,
-        note: statuses[i % statuses.length] === 'IZIN' ? 'Keperluan keluarga' : null,
+        date: today,
+        session: 'SESI_1',
+        status: 'HADIR',
+        biometricSource: 'FINGERPRINT',
+        note: 'Fingerprint ok (04.15 WIB)',
+        musyrifId: m.id,
       },
     })
-
-    await prisma.absensi.create({
+    // Session 2 (16.30-22.00)
+    await prisma.absensiMusyrif.create({
       data: {
-        date,
-        status: statuses[(i + 1) % statuses.length],
-        musyrifId: musyrif2.id,
+        date: today,
+        session: 'SESI_2',
+        status: 'HADIR',
+        biometricSource: 'FINGERPRINT',
+        note: 'Fingerprint ok (16.35 WIB)',
+        musyrifId: m.id,
       },
     })
   }
 
-  // Create Pelanggaran
-  const pelanggaranData = [
-    { santriIdx: 0, category: 'KETERTIBAN', level: 'RINGAN', description: 'Terlambat sholat Subuh berjamaah', points: 5 },
-    { santriIdx: 1, category: 'KEBERSIHAN', level: 'RINGAN', description: 'Tidak merapikan tempat tidur', points: 5 },
-    { santriIdx: 2, category: 'AKHLAK', level: 'SEDANG', description: 'Berbicara kasar kepada teman', points: 15 },
-    { santriIdx: 0, category: 'KETERTIBAN', level: 'SEDANG', description: 'Tidak mengikuti kajian malam', points: 15 },
-    { santriIdx: 3, category: 'KETERTIBAN', level: 'BERAT', description: 'Keluar pondok tanpa izin', points: 30 },
-    { santriIdx: 4, category: 'IBADAH', level: 'RINGAN', description: 'Terlambat sholat Dzuhur berjamaah', points: 5 },
-    { santriIdx: 5, category: 'AKADEMIK', level: 'RINGAN', description: 'Tidak mengerjakan tugas hafalan', points: 5 },
+  // 7. KPI Data
+  const kpiItems = [
+    { staffName: 'Ustadzah Siti Wahyuni, S. Ag.', position: 'Kepala Pesantren Banat', targetScore: 100, actualScore: 96, grade: 'SANGAT_BAIK', notes: 'Manajemen asrama & kurikulum berjalan sangat rapi.' },
+    { staffName: 'Ustadz Asrarun Najib, S.Pd.', position: 'Kepala Pesantren Banin', targetScore: 100, actualScore: 95, grade: 'SANGAT_BAIK', notes: 'Kedisiplinan musyrif dan program tahfizh terlaksana dengan baik.' },
+    { staffName: 'Ustadzah Lutpiana Ulpah', position: 'Waka K2S Banat', targetScore: 100, actualScore: 92, grade: 'SANGAT_BAIK', notes: 'Sanitasi dan kesehatan santriwati terpantau optimal.' },
+    { staffName: 'Ustadzah Nidatul Azizah, Al Hafidzah', position: 'Waka Kesantrian Banat', targetScore: 100, actualScore: 94, grade: 'SANGAT_BAIK', notes: 'Penanganan izin & ketertiban konsisten.' },
+    { staffName: 'Ustadzah Alda Nur Alfi Lail, S.Ag', position: 'Waka Kurikulum Banat', targetScore: 100, actualScore: 93, grade: 'SANGAT_BAIK', notes: 'Target setoran tahfizh & ubudiyyah tercapai.' },
+  ]
+  for (const k of kpiItems) {
+    await prisma.kPI.create({ data: { ...k, period: 'TA 2026/2027' } })
+  }
+
+  // 8. Point Akhlak Sample Entries (8 Indicators)
+  const akhlakCategories = [
+    'SHALAT_BERJAMAAH',
+    'AMALAN_SUNNAH',
+    'HORMAT_GURU',
+    'BERTUTUR_KATA_BAIK',
+    'PRIYANTUN',
+    'PEDULI_SOSIAL',
+    'BERTEMAN',
+    'MENJAGA_FASILITAS',
   ]
 
-  for (const data of pelanggaranData) {
-    const date = new Date()
-    date.setDate(date.getDate() - Math.floor(Math.random() * 30))
-    await prisma.pelanggaran.create({
+  for (let i = 0; i < santriRecords.length; i++) {
+    const s = santriRecords[i]
+    await prisma.pointAkhlak.create({
       data: {
-        date,
-        category: data.category,
-        level: data.level,
-        description: data.description,
-        points: data.points,
-        santriId: santriRecords[data.santriIdx].id,
-        musyrifId: data.santriIdx < 4 ? musyrif1.id : musyrif2.id,
+        date: new Date(),
+        category: akhlakCategories[i % akhlakCategories.length],
+        points: -5,
+        notes: 'Catatan kedisiplinan dan pembinaan akhlak santri',
+        room: s.room,
+        santriId: s.id,
+        musyrifId: s.musyrifId,
       },
     })
   }
 
-  // Create Perizinan Sakit
-  await prisma.perizinanSakit.create({
-    data: {
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 3 * 86400000),
-      reason: 'Demam tinggi dan flu',
-      status: 'PENDING',
-      santriId: santriRecords[0].id,
-      musyrifId: musyrif1.id,
-    },
-  })
+  // 9. Program Kerja Waka
+  const prokerList = [
+    { wakaTitle: 'KESANTRIAN', title: 'Peningkatan Ketertiban Shalat Berjamaah & OSAKA', month: 'Juli 2026', targetPercent: 100, actualPercent: 88, status: 'IN_PROGRESS', canvaLink: 'https://canva.link/1wl8s3qhpey9jom' },
+    { wakaTitle: 'KURIKULUM', title: 'Evaluasi Setoran Hafalan & Kelas Ubudiyyah', month: 'Juli 2026', targetPercent: 100, actualPercent: 92, status: 'IN_PROGRESS', canvaLink: 'https://canva.link/1wl8s3qhpey9jom' },
+    { wakaTitle: 'K2S', title: 'Pemeriksaan Kesehatan Berkala & Kebersihan Kamar', month: 'Juli 2026', targetPercent: 100, actualPercent: 85, status: 'IN_PROGRESS', canvaLink: 'https://canva.link/1wl8s3qhpey9jom' },
+  ]
+  for (const p of prokerList) {
+    await prisma.programKerjaWaka.create({ data: p })
+  }
 
-  await prisma.perizinanSakit.create({
-    data: {
-      startDate: new Date(Date.now() - 7 * 86400000),
-      endDate: new Date(Date.now() - 4 * 86400000),
-      reason: 'Sakit perut',
-      status: 'DISETUJUI',
-      santriId: santriRecords[4].id,
-      musyrifId: musyrif2.id,
-    },
-  })
-
-  // Create Perizinan Pulang
+  // 10. Perizinan & Pelanggaran Seed Data
   await prisma.perizinanPulang.create({
     data: {
       departDate: new Date(Date.now() + 86400000),
       returnDate: new Date(Date.now() + 4 * 86400000),
-      reason: 'Acara pernikahan saudara',
+      reason: 'Acara keluarga (Syukuran)',
       status: 'PENDING',
       parentConfirm: true,
-      santriId: santriRecords[1].id,
-      musyrifId: musyrif1.id,
+      santriId: santriRecords[4].id,
+      musyrifId: musyrifahBanatRecords[3].id,
     },
   })
 
-  // Create SKIA
-  await prisma.sKIA.create({
+  await prisma.pelanggaran.create({
     data: {
-      type: 'KETERANGAN_SANTRI',
-      description: 'Surat keterangan aktif belajar di pesantren',
-      status: 'DITERBITKAN',
-      santriId: santriRecords[0].id,
+      date: new Date(),
+      category: 'KETERTIBAN',
+      level: 'RINGAN',
+      description: 'Terlambat mengikuti halqah Al-Quran',
+      points: 5,
+      santriId: santriRecords[4].id,
+      musyrifId: musyrifahBanatRecords[3].id,
     },
   })
 
-  await prisma.sKIA.create({
+  // 11. Raport Sample Entry
+  await prisma.raport.create({
     data: {
-      type: 'IZIN_AKTIF',
-      description: 'Surat izin aktif untuk keperluan administrasi sekolah',
-      status: 'DRAFT',
-      santriId: santriRecords[2].id,
+      period: '2026/2027 - Semester 1',
+      totalPoints: 95,
+      grade: 'MUMTAZ',
+      details: JSON.stringify({ shalat: 'Sangat Baik', tahfizh: 'Juz 15 Clear', adab: 'Priyantun' }),
+      santriId: santriRecords[4].id,
     },
   })
 
-  console.log('✅ Seed completed!')
-  console.log('')
-  console.log('📧 Login credentials:')
-  console.log('   Admin:   admin@pesantren.com / admin123')
-  console.log('   Musyrif: musyrif1@pesantren.com / admin123')
-  console.log('   Santri:  santri@pesantren.com / admin123')
-  console.log('')
-  console.log(`   Admin User ID: ${adminUser.id}`)
+  console.log('✅ Seeding complete!')
+  console.log('📧 Credentials:')
+  console.log('   Admin Utama:     admin@alkaukab.sch.id / admin123')
+  console.log('   Kepala Banin:    kepala.banin@alkaukab.sch.id / admin123')
+  console.log('   Kepala Banat:    kepala.banat@alkaukab.sch.id / admin123')
+  console.log('   Waka Kesantrian: waka.kesantrian@alkaukab.sch.id / admin123')
+  console.log('   Musyrifah Banat: musyrifah.annur2@alkaukab.sch.id / admin123')
+  console.log('   Wali Santri NIS: S2026005 (Aisyah Az-Zahra)')
 }
 
 main()

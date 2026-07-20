@@ -46,6 +46,7 @@ model Santri {
   perizinanPulang PerizinanPulang[]
   skia            SKIA[]
   raport          Raport[]
+  pointAkhlak     PointAkhlak[]
 }
 
 model Musyrif {
@@ -54,6 +55,7 @@ model Musyrif {
   gender    String   // L / P
   phone     String?
   division  String?
+  room      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -62,10 +64,66 @@ model Musyrif {
 
   santriList      Santri[]
   absensi         Absensi[]
+  absensiMusyrif  AbsensiMusyrif[]
   pelanggaran     Pelanggaran[]
   perizinanSakit  PerizinanSakit[]
   perizinanPulang PerizinanPulang[]
   divisiAnggota   DivisiAnggota[]
+  pointAkhlak     PointAkhlak[]
+}
+
+model AbsensiMusyrif {
+  id              String   @id @default(cuid())
+  date            DateTime
+  session         String   // SESI_1 (04.00-07.30), SESI_2 (16.30-22.00)
+  status          String   // HADIR, SAKIT, IZIN, ALFA, TELAT, TUGAS_LEMBAGA, CUTI
+  biometricSource String   @default("FINGERPRINT") // FINGERPRINT, MANUAL
+  note            String?
+  musyrifId       String
+  musyrif         Musyrif  @relation(fields: [musyrifId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model KPI {
+  id          String   @id @default(cuid())
+  staffName   String
+  position    String
+  period      String   // e.g., "TA 2026/2027"
+  targetScore Float    @default(100.0)
+  actualScore Float    @default(90.0)
+  grade       String   // SANGAT_BAIK, BAIK, CUKUP, PERLU_EVALUASI
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PointAkhlak {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  category  String   // SHALAT_BERJAMAAH, AMALAN_SUNNAH, HORMAT_GURU, BERTUTUR_KATA_BAIK, PRIYANTUN, PEDULI_SOSIAL, BERTEMAN, MENJAGA_FASILITAS
+  points    Int      // Positive bonus or negative reduction
+  notes     String?
+  room      String?
+  santriId  String
+  santri    Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  musyrifId String?
+  musyrif   Musyrif? @relation(fields: [musyrifId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProgramKerjaWaka {
+  id            String   @id @default(cuid())
+  wakaTitle     String   // KESANTRIAN, KURIKULUM, K2S
+  title         String
+  month         String   // e.g., "Juli 2026"
+  targetPercent Int      @default(100)
+  actualPercent Int      @default(0)
+  status        String   @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, PENDING
+  canvaLink     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Struktur {
@@ -169,7 +227,7 @@ model Pelanggaran {
 
 model Raport {
   id          String   @id @default(cuid())
-  period      String   // e.g., "2024/2025 - Semester 1"
+  period      String   // e.g., "2026/2027 - Semester 1"
   totalPoints Int      @default(100)
   grade       String   // MUMTAZ, JAYYID_JIDDAN, JAYYID, MAQBUL, RASIB
   details     String?  // JSON string of violation summary
@@ -179,3 +237,4 @@ model Raport {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+

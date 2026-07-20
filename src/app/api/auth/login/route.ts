@@ -4,8 +4,47 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const body = await request.json()
+    const { email, password, nis } = body
 
+    // 1. Wali Santri Login by NIS
+    if (nis) {
+      const santri = await prisma.santri.findFirst({
+        where: {
+          OR: [
+            { nis: { equals: nis.trim(), mode: 'insensitive' } },
+            { name: { contains: nis.trim(), mode: 'insensitive' } },
+          ],
+        },
+      })
+
+      if (!santri) {
+        return Response.json(
+          { error: 'NIS / Nama Santri tidak ditemukan' },
+          { status: 404 }
+        )
+      }
+
+      await setSession({
+        id: santri.id,
+        email: `${santri.nis.toLowerCase()}@wali.alkaukab.sch.id`,
+        name: `Wali dari ${santri.name}`,
+        role: 'SANTRI',
+      })
+
+      return Response.json({
+        user: {
+          id: santri.id,
+          nis: santri.nis,
+          email: `${santri.nis.toLowerCase()}@wali.alkaukab.sch.id`,
+          name: `Wali dari ${santri.name}`,
+          santriName: santri.name,
+          role: 'SANTRI',
+        },
+      })
+    }
+
+    // 2. Admin / Musyrif Login by Email & Password
     if (!email || !password) {
       return Response.json(
         { error: 'Email dan password wajib diisi' },
