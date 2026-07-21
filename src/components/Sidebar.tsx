@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   LayoutDashboard,
   Users,
@@ -15,7 +16,6 @@ import {
   AlertTriangle,
   BarChart3,
   LogOut,
-  BookOpen,
   Award,
   ShieldCheck,
   Fingerprint,
@@ -140,7 +140,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         <div className="sidebar-header">
           <div className="sidebar-brand">
             <div className="sidebar-logo">
-              <BookOpen size={22} color="#064e3b" />
+              <Image src="/logo-alkaukab.jpg" alt="Logo Al-Kaukab" width={40} height={40} style={{ borderRadius: '8px' }} />
             </div>
             <div className="sidebar-brand-text">
               <h2>Al-Kaukab</h2>
@@ -157,7 +157,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                 const Icon = item.icon
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== '/dashboard' && pathname.startsWith(item.href))
+                  (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'))
                 return (
                   <Link
                     key={item.href}

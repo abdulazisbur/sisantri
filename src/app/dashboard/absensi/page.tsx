@@ -31,13 +31,24 @@ export default function AbsensiPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [absensiRes, musyrifRes] = await Promise.all([
-      fetch(`/api/absensi?month=${month}`),
-      fetch('/api/musyrif'),
-    ])
-    setAbsensiList(await absensiRes.json())
-    setMusyrifList(await musyrifRes.json())
-    setLoading(false)
+    try {
+      const [absensiRes, musyrifRes] = await Promise.all([
+        fetch(`/api/absensi?month=${month}`),
+        fetch('/api/musyrif'),
+      ])
+      if (absensiRes.ok) {
+        const data = await absensiRes.json()
+        setAbsensiList(Array.isArray(data) ? data : [])
+      }
+      if (musyrifRes.ok) {
+        const data = await musyrifRes.json()
+        setMusyrifList(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching absensi:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [month])
 
   useEffect(() => { fetchData() }, [fetchData])
@@ -72,7 +83,7 @@ export default function AbsensiPage() {
   return (
     <div>
       <h1 className="page-title" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <ClipboardList size={24} /> Absensi Musyrif/ah
+        <ClipboardList size={24} /> Absensi Musyrif/ah &amp; Fingerprint
       </h1>
 
       {/* Summary */}

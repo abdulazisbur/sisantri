@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BookOpen, Shield, UserCheck, Heart, Search, MapPin, Sparkles, KeyRound, Award } from 'lucide-react'
+import Image from 'next/image'
+import { Shield, UserCheck, Heart, Search, MapPin, Sparkles, KeyRound, Award } from 'lucide-react'
 
 export default function LandingLoginPage() {
   const router = useRouter()
@@ -124,18 +125,15 @@ export default function LandingLoginPage() {
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           {/* Logo Al-Kaukab Emblem */}
           <div style={{
-            width: '90px',
-            height: '90px',
+            width: '100px',
+            height: '100px',
             margin: '0 auto 16px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 10px 25px rgba(217, 119, 6, 0.4)',
-            border: '4px solid rgba(255, 255, 255, 0.9)',
+            filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.3))',
           }}>
-            <BookOpen size={44} color="#064e3b" strokeWidth={2.5} />
+            <Image src="/logo-alkaukab.jpg" alt="Logo Pesantren Al-Kaukab" width={100} height={100} style={{ borderRadius: '12px' }} />
           </div>
 
           <span style={{

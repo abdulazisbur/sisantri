@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AlertTriangle, Plus, X, Search } from 'lucide-react'
+import { useUser } from '@/components/DashboardShell'
 
 interface Pelanggaran {
   id: string
@@ -18,6 +19,7 @@ interface Santri { id: string; name: string; nis: string }
 interface Musyrif { id: string; name: string }
 
 export default function PelanggaranPage() {
+  const user = useUser()
   const [list, setList] = useState<Pelanggaran[]>([])
   const [santriList, setSantriList] = useState<Santri[]>([])
   const [musyrifList, setMusyrifList] = useState<Musyrif[]>([])
@@ -31,15 +33,29 @@ export default function PelanggaranPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [pelRes, santriRes, musyrifRes] = await Promise.all([
-      fetch('/api/pelanggaran'),
-      fetch('/api/santri'),
-      fetch('/api/musyrif'),
-    ])
-    setList(await pelRes.json())
-    setSantriList(await santriRes.json())
-    setMusyrifList(await musyrifRes.json())
-    setLoading(false)
+    try {
+      const [pelRes, santriRes, musyrifRes] = await Promise.all([
+        fetch('/api/pelanggaran'),
+        fetch('/api/santri'),
+        fetch('/api/musyrif'),
+      ])
+      if (pelRes.ok) {
+        const data = await pelRes.json()
+        setList(Array.isArray(data) ? data : [])
+      }
+      if (santriRes.ok) {
+        const data = await santriRes.json()
+        setSantriList(Array.isArray(data) ? data : [])
+      }
+      if (musyrifRes.ok) {
+        const data = await musyrifRes.json()
+        setMusyrifList(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching pelanggaran data:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
@@ -89,14 +105,50 @@ export default function PelanggaranPage() {
     p.description.toLowerCase().includes(search.toLowerCase())
   )
 
-  // Summary
   const totalPoin = filtered.reduce((sum, p) => sum + p.points, 0)
+
+  // Calculate SP thresholds per santri
+  const santriPoinMap = list.reduce((acc, p) => {
+    acc[p.santri.id] = acc[p.santri.id] || { name: p.santri.name, nis: p.santri.nis, points: 0 }
+    acc[p.santri.id].points += p.points
+    return acc
+  }, {} as Record<string, { name: string; nis: string; points: number }>)
+
+  const sp1Santri = Object.values(santriPoinMap).filter(s => s.points >= 25 && s.points < 50)
+  const sp2Santri = Object.values(santriPoinMap).filter(s => s.points >= 50 && s.points < 75)
+  const sp3Santri = Object.values(santriPoinMap).filter(s => s.points >= 75)
 
   return (
     <div>
       <h1 className="page-title" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <AlertTriangle size={24} /> Pelanggaran Santri
+        <AlertTriangle size={24} /> Pelanggaran &amp; Monitoring SP Santri
       </h1>
+
+      {/* SP ALERT BANNER */}
+      {(sp1Santri.length > 0 || sp2Santri.length > 0 || sp3Santri.length > 0) && (
+        <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={18} color="#dc2626" /> SANKSI SURAT PERINGATAN (SP) OTOMATIS
+          </h3>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px' }}>
+            {sp3Santri.length > 0 && (
+              <div style={{ background: '#7f1d1d', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontWeight: 700 }}>
+                🚨 <strong>{sp3Santri.length} Santri kriteria SP3</strong> (Poin ≥ 75): {sp3Santri.map(s => s.name).join(', ')}
+              </div>
+            )}
+            {sp2Santri.length > 0 && (
+              <div style={{ background: '#dc2626', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontWeight: 700 }}>
+                ⚠️ <strong>{sp2Santri.length} Santri kriteria SP2</strong> (Poin ≥ 50): {sp2Santri.map(s => s.name).join(', ')}
+              </div>
+            )}
+            {sp1Santri.length > 0 && (
+              <div style={{ background: '#d97706', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontWeight: 700 }}>
+                ⚠️ <strong>{sp1Santri.length} Santri kriteria SP1</strong> (Poin ≥ 25): {sp1Santri.map(s => s.name).join(', ')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -120,14 +172,16 @@ export default function PelanggaranPage() {
             <input placeholder="Cari santri atau deskripsi..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </div>
-        <div className="toolbar-right">
-          <button className="btn btn-primary" onClick={() => {
-            setForm({ santriId: '', musyrifId: '', date: new Date().toISOString().slice(0, 10), category: 'KETERTIBAN', level: 'RINGAN', description: '' })
-            setShowModal(true)
-          }}>
-            <Plus size={16} /> Input Pelanggaran
-          </button>
-        </div>
+        {user?.role !== 'SANTRI' && (
+          <div className="toolbar-right">
+            <button className="btn btn-primary" onClick={() => {
+              setForm({ santriId: '', musyrifId: '', date: new Date().toISOString().slice(0, 10), category: 'KETERTIBAN', level: 'RINGAN', description: '' })
+              setShowModal(true)
+            }}>
+              <Plus size={16} /> Input Pelanggaran
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="card">

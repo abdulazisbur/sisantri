@@ -1,10 +1,79 @@
 'use client'
 
-import { useState } from 'react'
-import { Network, UserCheck, Shield, BookOpen, Award, Building, Sparkles } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Network, UserCheck, Shield, BookOpen, Award, Building, Sparkles, Plus, Edit, Trash2, X } from 'lucide-react'
+
+interface StrukturItem {
+  id?: string
+  name: string
+  position: string
+  period: string
+  order: number
+}
 
 export default function StrukturOrganisasiPage() {
   const [activeTab, setActiveTab] = useState<'IDARAH' | 'BANIN' | 'BANAT'>('IDARAH')
+  const [customList, setCustomList] = useState<StrukturItem[]>([])
+  const [showModal, setShowModal] = useState(false)
+  const [editItem, setEditItem] = useState<StrukturItem | null>(null)
+  const [form, setForm] = useState({ name: '', position: '', period: '2026/2027', order: 1 })
+
+  const fetchStruktur = useCallback(async () => {
+    try {
+      const res = await fetch('/api/struktur')
+      if (res.ok) {
+        const data = await res.json()
+        setCustomList(Array.isArray(data) ? data : [])
+      }
+    } catch (e) {
+      console.error('Error fetching struktur:', e)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStruktur()
+  }, [fetchStruktur])
+
+  function openCreate() {
+    setEditItem(null)
+    setForm({ name: '', position: '', period: '2026/2027', order: customList.length + 1 })
+    setShowModal(true)
+  }
+
+  function openEdit(item: StrukturItem) {
+    setEditItem(item)
+    setForm({ name: item.name, position: item.position, period: item.period, order: item.order })
+    setShowModal(true)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (editItem?.id) {
+      await fetch('/api/struktur', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editItem.id, ...form }),
+      })
+    } else {
+      await fetch('/api/struktur', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+    }
+    setShowModal(false)
+    fetchStruktur()
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Yakin hapus pengurus ini?')) return
+    await fetch('/api/struktur', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    fetchStruktur()
+  }
 
   const mudirah = {
     name: 'Ibu Nyai Hj. Endang Riska Yani, S.Pd.I.',
@@ -264,7 +333,7 @@ export default function StrukturOrganisasiPage() {
           </div>
 
           {/* Kemusyrifan Banat List */}
-          <div style={{ background: '#fdf2f8', border: '1px solid #fbcfe8', borderRadius: '14px', padding: '20px' }}>
+          <div style={{ background: '#fdf2f8', border: '1px solid #fbcfe8', borderRadius: '14px', padding: '20px', marginBottom: '28px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#831843', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Building size={18} color="#9d174d" /> Kemusyrifan Asrama Banat (8 Ustadzah)
             </h3>
@@ -300,6 +369,85 @@ export default function StrukturOrganisasiPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DYNAMIC CUSTOM PENGURUS DB SECTION */}
+      <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '2px stroke var(--border-color)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={20} color="#d97706" /> Personalia &amp; Pengurus Tambahan (Database Input)
+          </h2>
+          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={16} /> Tambah Pengurus
+          </button>
+        </div>
+
+        {customList.length === 0 ? (
+          <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            Belum ada pengurus tambahan yang diinput. Klik tombol &quot;Tambah Pengurus&quot; untuk menambahkan data secara dinamis.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            {customList.map((item) => (
+              <div key={item.id} style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '16px',
+                position: 'relative',
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                  {item.position}
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px' }}>{item.name}</h3>
+                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Periode: {item.period}</div>
+
+                <div style={{ display: 'flex', gap: '6px', marginTop: '12px', justifyContent: 'flex-end' }}>
+                  <button className="table-action-btn" onClick={() => openEdit(item)} title="Edit"><Edit size={14} /></button>
+                  <button className="table-action-btn danger" onClick={() => item.id && handleDelete(item.id)} title="Hapus"><Trash2 size={14} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* CRUD MODAL */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">{editItem ? 'Edit Pengurus' : 'Tambah Pengurus Baru'}</h3>
+              <button className="modal-close" onClick={() => setShowModal(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Nama Lengkap &amp; Gelar</label>
+                  <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Ustadz Ahmad, M.Pd." required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Jabatan / Posisi</label>
+                  <input className="form-input" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="Contoh: Koordinator Ubudiyyah Banin" required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Periode</label>
+                    <input className="form-input" value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Urutan</label>
+                    <input className="form-input" type="number" value={form.order} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} required />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
+                <button type="submit" className="btn btn-primary">Simpan</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

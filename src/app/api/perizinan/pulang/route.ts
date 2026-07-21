@@ -8,8 +8,11 @@ export async function GET() {
   const where: Record<string, unknown> = {}
 
   if (session.role === 'SANTRI') {
-    const santri = await prisma.santri.findUnique({ where: { userId: session.id } })
+    const santri = await prisma.santri.findFirst({
+      where: { OR: [{ id: session.id }, { userId: session.id }] },
+    })
     if (santri) where.santriId = santri.id
+    else where.santriId = session.id
   }
 
   const perizinan = await prisma.perizinanPulang.findMany({
@@ -22,13 +25,25 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await getSession()
-  if (!session || session.role === 'SANTRI')
-    return Response.json({ error: 'Unauthorized' }, { status: 403 })
+  if (!session)
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const data = await request.json()
+
+  // If session is SANTRI, force santriId to session santri
+  let santriId = data.santriId
+  if (session.role === 'SANTRI') {
+    const santri = await prisma.santri.findFirst({
+      where: { OR: [{ id: session.id }, { userId: session.id }] },
+    })
+    if (santri) santriId = santri.id
+    else santriId = session.id
+  }
+
   const perizinan = await prisma.perizinanPulang.create({
     data: {
       ...data,
+      santriId,
       departDate: new Date(data.departDate),
       returnDate: new Date(data.returnDate),
     },

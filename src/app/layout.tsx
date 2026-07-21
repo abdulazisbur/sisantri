@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'SiSantri - Sistem Manajemen Pondok Pesantren',
+  title: 'Pesantren Al-Kaukab - Sistem Manajemen Pondok Pesantren',
   description:
     'Aplikasi manajemen pondok pesantren untuk mengelola santri, absensi, perizinan, pelanggaran, dan raport.',
 }

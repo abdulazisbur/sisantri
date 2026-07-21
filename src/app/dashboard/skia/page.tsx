@@ -23,13 +23,24 @@ export default function SKIAPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [skiaRes, santriRes] = await Promise.all([
-      fetch('/api/skia'),
-      fetch('/api/santri'),
-    ])
-    setList(await skiaRes.json())
-    setSantriList(await santriRes.json())
-    setLoading(false)
+    try {
+      const [skiaRes, santriRes] = await Promise.all([
+        fetch('/api/skia'),
+        fetch('/api/santri'),
+      ])
+      if (skiaRes.ok) {
+        const data = await skiaRes.json()
+        setList(Array.isArray(data) ? data : [])
+      }
+      if (santriRes.ok) {
+        const data = await santriRes.json()
+        setSantriList(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching SKIA data:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])

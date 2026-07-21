@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Users, Plus, Search, Edit, Trash2, X } from 'lucide-react'
+import { Users, Plus, Search, Edit, Trash2, X, Download, Upload, FileSpreadsheet, CreditCard } from 'lucide-react'
+import Link from 'next/link'
 
 interface Santri {
   id: string
@@ -31,6 +32,7 @@ export default function SantriPage() {
   const [showModal, setShowModal] = useState(false)
   const [editItem, setEditItem] = useState<Santri | null>(null)
   const [loading, setLoading] = useState(true)
+  const [importing, setImporting] = useState(false)
   const [form, setForm] = useState({
     nis: '', name: '', gender: 'L', room: '', class: '',
     parentName: '', parentPhone: '', address: '', entryYear: new Date().getFullYear().toString(),
@@ -39,13 +41,24 @@ export default function SantriPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [santriRes, musyrifRes] = await Promise.all([
-      fetch(`/api/santri?search=${search}`),
-      fetch('/api/musyrif'),
-    ])
-    setSantriList(await santriRes.json())
-    setMusyrifList(await musyrifRes.json())
-    setLoading(false)
+    try {
+      const [santriRes, musyrifRes] = await Promise.all([
+        fetch(`/api/santri?search=${search}`),
+        fetch('/api/musyrif'),
+      ])
+      if (santriRes.ok) {
+        const data = await santriRes.json()
+        setSantriList(Array.isArray(data) ? data : [])
+      }
+      if (musyrifRes.ok) {
+        const data = await musyrifRes.json()
+        setMusyrifList(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching santri data:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [search])
 
   useEffect(() => { fetchData() }, [fetchData])
@@ -92,11 +105,56 @@ export default function SantriPage() {
     fetchData()
   }
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    setImporting(true)
+    try {
+      const res = await fetch('/api/santri/import', { method: 'POST', body: formData })
+      const resData = await res.json()
+      if (res.ok) {
+        alert(resData.message || 'Import data santri berhasil!')
+        fetchData()
+      } else {
+        alert('Gagal import: ' + (resData.error || 'Terjadi kesalahan'))
+      }
+    } catch (err) {
+      alert('Gagal mengupload file Excel')
+    } finally {
+      setImporting(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <div>
-      <h1 className="page-title" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <Users size={24} /> Data Santri
-      </h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+          <Users size={24} /> Data Santri
+        </h1>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Link href="/dashboard/santri/kts" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <CreditCard size={16} /> KTS Digital Santri
+          </Link>
+          <a href="/api/santri/export?type=template" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Download size={16} /> Template Excel
+          </a>
+          <label className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: importing ? 'wait' : 'pointer' }}>
+            <Upload size={16} /> {importing ? 'Mengimpor...' : 'Import Excel'}
+            <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style={{ display: 'none' }} disabled={importing} />
+          </label>
+          <a href="/api/santri/export" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <FileSpreadsheet size={16} /> Export Excel
+          </a>
+          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={16} /> Tambah Santri
+          </button>
+        </div>
+      </div>
 
       <div className="toolbar">
         <div className="toolbar-left">
@@ -108,11 +166,6 @@ export default function SantriPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-        </div>
-        <div className="toolbar-right">
-          <button className="btn btn-primary" onClick={openCreate}>
-            <Plus size={16} /> Tambah Santri
-          </button>
         </div>
       </div>
 

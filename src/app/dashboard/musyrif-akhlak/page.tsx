@@ -12,9 +12,12 @@ import {
   Filter,
   Users,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react'
+import { useUser } from '@/components/DashboardShell'
 
 export default function DashboardMusyrifAkhlakPage() {
+  const user = useUser()
   const [selectedRoom, setSelectedRoom] = useState<string>('An Nur 02')
   const [dateInput, setDateInput] = useState<string>('2026-07-20')
   const [selectedSantriId, setSelectedSantriId] = useState<string>('')
@@ -146,53 +149,55 @@ export default function DashboardMusyrifAkhlakPage() {
         </p>
       </div>
 
-      {/* Room Selector Dropdown */}
-      <div style={{
-        background: '#ffffff',
-        border: '1.5px solid #064e3b',
-        borderRadius: '14px',
-        padding: '20px',
-        marginBottom: '28px',
-        boxShadow: '0 4px 12px rgba(6,78,59,0.06)',
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', alignItems: 'center' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-              🏢 Pilih Asrama / Kamar Musyrif/ah:
-            </label>
-            <select
-              value={selectedRoom}
-              onChange={(e) => setSelectedRoom(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '14px',
-                fontWeight: 700,
-                color: '#064e3b',
-                background: '#f8fafc',
-                outline: 'none',
-              }}
-            >
-              {roomList.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '14px 18px', borderRadius: '10px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#065f46', textTransform: 'uppercase', marginBottom: '2px' }}>
-              Musyrif / Musyrifah Penanggung Jawab:
+      {/* Room Selector Dropdown - Only for Admin/Musyrif */}
+      {user?.role !== 'SANTRI' && (
+        <div style={{
+          background: '#ffffff',
+          border: '1.5px solid #064e3b',
+          borderRadius: '14px',
+          padding: '20px',
+          marginBottom: '28px',
+          boxShadow: '0 4px 12px rgba(6,78,59,0.06)',
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', alignItems: 'center' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                🏢 Pilih Asrama / Kamar Musyrif/ah:
+              </label>
+              <select
+                value={selectedRoom}
+                onChange={(e) => setSelectedRoom(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: '#064e3b',
+                  background: '#f8fafc',
+                  outline: 'none',
+                }}
+              >
+                {roomList.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#047857' }}>
-              👤 {currentRoomInfo?.musyrifah}
+
+            <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '14px 18px', borderRadius: '10px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#065f46', textTransform: 'uppercase', marginBottom: '2px' }}>
+                Musyrif / Musyrifah Penanggung Jawab:
+              </div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#047857' }}>
+                👤 {currentRoomInfo?.musyrifah}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {showSuccessAlert && (
         <div style={{
@@ -212,13 +217,14 @@ export default function DashboardMusyrifAkhlakPage() {
         </div>
       )}
 
-      {/* Main Grid: Form & 8 Indicators */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-        {/* Form Entry */}
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-          <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#064e3b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <PlusCircle size={20} color="#064e3b" /> Form Input Point Akhlak Santri
-          </h3>
+      {/* Main Grid: Form (Admin/Musyrif) & 8 Indicators */}
+      <div style={{ display: 'grid', gridTemplateColumns: user?.role === 'SANTRI' ? '1fr' : 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+        {/* Form Entry - Admin/Musyrif Only */}
+        {user?.role !== 'SANTRI' && (
+          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#064e3b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <PlusCircle size={20} color="#064e3b" /> Form Input Point Akhlak Santri
+            </h3>
 
           <form onSubmit={handleFormSubmit}>
             <div style={{ marginBottom: '16px' }}>
@@ -345,6 +351,7 @@ export default function DashboardMusyrifAkhlakPage() {
             </button>
           </form>
         </div>
+        )}
 
         {/* 8 Indicators Display Card */}
         <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '16px', padding: '24px' }}>

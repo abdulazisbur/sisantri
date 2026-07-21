@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { UserCheck, Plus, Edit, Trash2, X } from 'lucide-react'
+import { UserCheck, Plus, Edit, Trash2, X, Download, Upload, FileSpreadsheet } from 'lucide-react'
 
 interface Musyrif {
   id: string
@@ -17,13 +17,22 @@ export default function MusyrifPage() {
   const [showModal, setShowModal] = useState(false)
   const [editItem, setEditItem] = useState<Musyrif | null>(null)
   const [loading, setLoading] = useState(true)
+  const [importing, setImporting] = useState(false)
   const [form, setForm] = useState({ name: '', gender: 'L', phone: '', division: '' })
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const res = await fetch('/api/musyrif')
-    setList(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch('/api/musyrif')
+      if (res.ok) {
+        const data = await res.json()
+        setList(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching musyrif data:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
@@ -61,16 +70,49 @@ export default function MusyrifPage() {
     fetchData()
   }
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    setImporting(true)
+    try {
+      const res = await fetch('/api/musyrif/import', { method: 'POST', body: formData })
+      const resData = await res.json()
+      if (res.ok) {
+        alert(resData.message || 'Import data musyrif berhasil!')
+        fetchData()
+      } else {
+        alert('Gagal import: ' + (resData.error || 'Terjadi kesalahan'))
+      }
+    } catch (err) {
+      alert('Gagal mengupload file Excel')
+    } finally {
+      setImporting(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <div>
-      <h1 className="page-title" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <UserCheck size={24} /> Data Musyrif/ah
-      </h1>
-
-      <div className="toolbar">
-        <div className="toolbar-left" />
-        <div className="toolbar-right">
-          <button className="btn btn-primary" onClick={openCreate}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+          <UserCheck size={24} /> Data Musyrif/ah
+        </h1>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <a href="/api/musyrif/export?type=template" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Download size={16} /> Template Excel
+          </a>
+          <label className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: importing ? 'wait' : 'pointer' }}>
+            <Upload size={16} /> {importing ? 'Mengimpor...' : 'Import Excel'}
+            <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style={{ display: 'none' }} disabled={importing} />
+          </label>
+          <a href="/api/musyrif/export" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <FileSpreadsheet size={16} /> Export Excel
+          </a>
+          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <Plus size={16} /> Tambah Musyrif
           </button>
         </div>

@@ -24,9 +24,17 @@ export default function DivisiPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const res = await fetch('/api/divisi')
-    setDivisiList(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch('/api/divisi')
+      if (res.ok) {
+        const data = await res.json()
+        setDivisiList(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching divisi data:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])

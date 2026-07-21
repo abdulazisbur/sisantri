@@ -9,8 +9,11 @@ export async function GET() {
   const where: Record<string, unknown> = {}
 
   if (session.role === 'SANTRI') {
-    const santri = await prisma.santri.findUnique({ where: { userId: session.id } })
+    const santri = await prisma.santri.findFirst({
+      where: { OR: [{ id: session.id }, { userId: session.id }] },
+    })
     if (santri) where.santriId = santri.id
+    else where.santriId = session.id
   }
 
   const pelanggaran = await prisma.pelanggaran.findMany({

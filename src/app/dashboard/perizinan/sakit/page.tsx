@@ -29,15 +29,29 @@ export default function PerizinanSakitPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [perizinanRes, santriRes, musyrifRes] = await Promise.all([
-      fetch('/api/perizinan/sakit'),
-      fetch('/api/santri'),
-      fetch('/api/musyrif'),
-    ])
-    setList(await perizinanRes.json())
-    setSantriList(await santriRes.json())
-    setMusyrifList(await musyrifRes.json())
-    setLoading(false)
+    try {
+      const [perizinanRes, santriRes, musyrifRes] = await Promise.all([
+        fetch('/api/perizinan/sakit'),
+        fetch('/api/santri'),
+        fetch('/api/musyrif'),
+      ])
+      if (perizinanRes.ok) {
+        const data = await perizinanRes.json()
+        setList(Array.isArray(data) ? data : [])
+      }
+      if (santriRes.ok) {
+        const data = await santriRes.json()
+        setSantriList(Array.isArray(data) ? data : [])
+      }
+      if (musyrifRes.ok) {
+        const data = await musyrifRes.json()
+        setMusyrifList(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching perizinan sakit data:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
