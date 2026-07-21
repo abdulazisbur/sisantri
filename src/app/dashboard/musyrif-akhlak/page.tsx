@@ -401,7 +401,10 @@ export default function DashboardMusyrifAkhlakPage() {
               </tr>
             </thead>
             <tbody>
-              {logHistory.map((item) => (
+              {(user?.role === 'SANTRI'
+                ? logHistory.filter((item) => user.name.includes(item.santriName) || item.santriName.includes(user.name.replace('Wali dari ', '')))
+                : logHistory
+              ).map((item) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '12px 16px', color: '#475569' }}>{item.date}</td>
                   <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a' }}>{item.santriName}</td>
